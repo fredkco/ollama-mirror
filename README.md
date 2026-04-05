@@ -22,6 +22,8 @@ Tested on Ubuntu 22.04, 24.04, and 26.04 (beta).
 ## Quick Start
 
 ```bash
+git clone https://github.com/fredkco/ollama-mirror.git
+cd ollama-mirror
 chmod +x ollama-fetch.sh
 ./ollama-fetch.sh models.list ./ollama-offline
 ```
