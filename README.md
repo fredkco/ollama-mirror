@@ -8,6 +8,10 @@ This project assumes Ollama is installed via Snap (`snap install ollama`) on the
 
 Search keywords: `ollama-offline`, `ollama offline`, `offline ollama repository`.
 
+## Compatibility
+
+Tested on Ubuntu 22.04, 24.04, and 26.04 (beta).
+
 ## Requirements
 
 - Linux with Bash
