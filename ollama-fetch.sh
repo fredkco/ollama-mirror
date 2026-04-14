@@ -496,6 +496,7 @@ OLLAMA_REPO_URL="${OLLAMA_REPO_URL:-http://your-server/ollama-offline}"
 MANIFEST_URL="${OLLAMA_REPO_URL%/}/manifest.tsv"
 SNAP_OLLAMA=0
 SNAP_OLLAMA_MODELS_DIR="${SNAP_OLLAMA_MODELS_DIR:-}"
+CUSTOM_OLLAMA_MODELS_DIR="${CUSTOM_OLLAMA_MODELS_DIR:-}"
 OLLAMA_CACHE_DIR="${OLLAMA_CACHE_DIR:-}"
 MANIFEST_FILE=""
 MODELFILES_DIR=""
@@ -550,7 +551,14 @@ resolve_runtime_paths() {
 
   if [[ "$needs_ollama_runtime" -eq 1 ]]; then
     detect_snap_ollama
-    if [[ "$SNAP_OLLAMA" -eq 1 ]]; then
+
+    if [[ -n "$CUSTOM_OLLAMA_MODELS_DIR" ]]; then
+      if ! path_is_writable_or_creatable "$CUSTOM_OLLAMA_MODELS_DIR"; then
+        echo "ERROR: models directory is not writable: $CUSTOM_OLLAMA_MODELS_DIR"
+        exit 1
+      fi
+      log "Using custom models dir: $CUSTOM_OLLAMA_MODELS_DIR"
+    elif [[ "$SNAP_OLLAMA" -eq 1 ]]; then
       default_cache="$HOME/snap/ollama/common/offline-cache"
       if [[ -n "$SNAP_OLLAMA_MODELS_DIR" ]] && ! path_is_writable_or_creatable "$SNAP_OLLAMA_MODELS_DIR"; then
         log "WARN: snap models dir is not writable: $SNAP_OLLAMA_MODELS_DIR"
@@ -746,9 +754,16 @@ render_modelfile() {
 ollama_create_from_modelfile() {
   local model_ref="$1"
   local modelfile="$2"
+  local models_dir
 
-  if [[ "$SNAP_OLLAMA" -eq 1 && -n "$SNAP_OLLAMA_MODELS_DIR" ]]; then
-    OLLAMA_MODELS="$SNAP_OLLAMA_MODELS_DIR" ollama create "$model_ref" -f "$modelfile"
+  if [[ -n "$CUSTOM_OLLAMA_MODELS_DIR" ]]; then
+    models_dir="$CUSTOM_OLLAMA_MODELS_DIR"
+  elif [[ "$SNAP_OLLAMA" -eq 1 && -n "$SNAP_OLLAMA_MODELS_DIR" ]]; then
+    models_dir="$SNAP_OLLAMA_MODELS_DIR"
+  fi
+
+  if [[ -n "$models_dir" ]]; then
+    OLLAMA_MODELS="$models_dir" ollama create "$model_ref" -f "$modelfile"
     return
   fi
 
@@ -852,13 +867,42 @@ list_available() {
 }
 
 usage() {
-  echo "Usage: $0 install <model...> | install-all | list"
+  echo "Usage: $0 [--models-location=DIR] install <model...> | install-all | list"
 }
 
 require_cmd wget
 require_cmd awk
 require_cmd sed
 require_cmd grep
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --models-location=*)
+      CUSTOM_OLLAMA_MODELS_DIR="${1#*=}"
+      shift
+      ;;
+    --models-location)
+      if [[ $# -lt 2 ]]; then
+        echo "ERROR: missing value for --models-location"
+        exit 1
+      fi
+      CUSTOM_OLLAMA_MODELS_DIR="$2"
+      shift 2
+      ;;
+    install|install-all|list)
+      break
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: unknown option: $1"
+      usage
+      exit 1
+      ;;
+  esac
+ done
 
 if [[ $# -lt 1 ]]; then
   usage

@@ -84,6 +84,17 @@ export OLLAMA_REPO_URL="http://<server>:8080/ollama-offline"
 - `OLLAMA_REPO_URL`: mirror base URL used by `ollama-offline.sh`
 - `OLLAMA_CACHE_DIR`: local cache for downloaded manifest/model artifacts
 - `SNAP_OLLAMA_MODELS_DIR`: override Snap models directory (default: `$HOME/snap/ollama/common/.ollama/models`)
+- `CUSTOM_OLLAMA_MODELS_DIR`: custom models directory for non-snap Ollama installs
+
+## Using a custom models directory
+
+If your local Ollama install uses a non-snap models directory, pass `--models-location` when running `ollama-offline.sh`:
+
+```bash
+./ollama-offline.sh --models-location=/usr/share/ollama/.ollama/models install llama3.2
+```
+
+You can also set `OLLAMA_MODELS` in your environment if your Ollama runtime requires a custom models path.
 
 ## Publishing Notes
 
